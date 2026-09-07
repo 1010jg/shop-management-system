@@ -222,28 +222,6 @@ VITE_API_URL=http://localhost:5000/api
 
 ---
 
-## ✅ Checklist ตรงตามเงื่อนไขโครงงาน (40 คะแนน)
-
-### Frontend (Vue.js)
-- [x] ใช้ Vue.js Project Structure ที่เหมาะสม (Vite + Vue 3)
-- [x] จัดโครงสร้างเป็นส่วน ๆ: components, views, router, services, stores, assets
-- [x] ระบบ Routing ครบ: List, Add, Edit, Detail (+ Guard ป้องกันตามบทบาท)
-- [x] ออกแบบ UI ด้วย Tailwind CSS ใช้งานง่าย มีเมนู ปุ่ม ฟอร์ม ตาราง Card
-- [x] Component ใช้ซ้ำได้: Navbar, BaseButton, BaseInput, ConfirmModal, DataTable, ProductCard, CartItem
-- [x] แบบฟอร์มเพิ่มข้อมูล ส่งไปยัง Backend ได้
-- [x] หน้าแสดงข้อมูลทั้งหมด ดึงจาก API แสดงเป็น Table
-- [x] ระบบแก้ไขข้อมูล บันทึกกลับฐานข้อมูล
-- [x] ระบบลบข้อมูล พร้อมข้อความยืนยันก่อนลบ (ConfirmModal)
-
-### Backend (Node.js + Express.js)
-- [x] ติดตั้ง Package ครบ: Express, Mongoose, CORS, dotenv, bcryptjs, jsonwebtoken
-- [x] Frontend–Backend ทำงานร่วมกันผ่าน REST API ครบ GET / POST / PUT / DELETE
-- [x] ส่วน Admin: เพิ่ม ลบ แก้ไข ผู้ใช้ได้
-- [x] ส่วน User: สมัครสมาชิก เข้าสู่ระบบ ออกจากระบบ
-- [x] User ไม่สามารถเข้าหน้า Admin ได้ (Middleware + Route Guard)
-
----
-
 ## 🧪 ขั้นตอนทดสอบระบบ (Demo Script)
 
 1. Login `shop01` → ขายสินค้าหลายชิ้นในตะกร้าเดียว → ตรวจสอบสต็อกร้านลดลง
