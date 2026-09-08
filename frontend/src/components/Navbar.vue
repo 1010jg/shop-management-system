@@ -1,6 +1,7 @@
 <script setup>
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
+import { roleLabels, roleIcons } from '../data/roles'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -66,7 +67,9 @@ const logout = () => {
       <div class="flex items-center gap-3">
         <div class="text-right hidden sm:block">
           <p class="text-sm font-semibold text-gray-900">{{ authStore.user?.name }}</p>
-          <p class="text-xs text-gray-500 capitalize">{{ authStore.user?.role }}</p>
+          <p class="text-xs text-gray-500">
+            {{ roleIcons[authStore.user?.role] }} {{ roleLabels[authStore.user?.role] || authStore.user?.role }}
+          </p>
         </div>
         
         <button @click="logout" class="btn-secondary text-sm !px-3 !py-1.5">

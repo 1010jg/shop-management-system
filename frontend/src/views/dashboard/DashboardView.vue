@@ -1,5 +1,6 @@
 <script setup>
 import { useAuthStore } from '../../stores/auth'
+import { roleLabels } from '../../data/roles'
 
 const authStore = useAuthStore()
 
@@ -64,9 +65,9 @@ const filteredMenus = menus.filter(
         สวัสดี, {{ authStore.userName }} 👋
       </h1>
       <p class="text-blue-100">
-        บทบาท: 
-        <span class="capitalize font-semibold">
-          {{ authStore.user?.role?.replace('_', ' ') }}
+        บทบาท:
+        <span class="font-semibold">
+          {{ roleLabels[authStore.user?.role] || authStore.user?.role }}
         </span>
       </p>
     </div>

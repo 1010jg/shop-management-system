@@ -2,13 +2,20 @@
 import { reactive, ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { userService } from '../../services/userService'
+import { useAuthStore } from '../../stores/auth'
 import BaseButton from '../../components/BaseButton.vue'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 
 const userId = route.params.id
 const isEdit = computed(() => !!userId)
+
+// ✅ กำลังแก้ไขบัญชีของตนเองอยู่หรือไม่
+const isSelf = computed(() =>
+  isEdit.value && String(userId) === String(authStore.user?.id)
+)
 
 const loading = ref(false)
 const errorMessage = ref('')
@@ -22,13 +29,16 @@ const form = reactive({
   isActive: true
 })
 
+const roleLabels = {
+  super_admin: 'ผู้ดูแลระบบ',
+  warehouse: 'เจ้าหน้าที่คลังสินค้า',
+  shop: 'พนักงานร้านค้า'
+}
+
 const fetchUser = async () => {
   if (!isEdit.value) return
-
   try {
     loading.value = true
-
-    // Backend ไม่มี GET /users/:id จึงดึงทั้งหมดแล้วหาตาม id
     const users = await userService.getAll()
     const user = users.find(u => u._id === userId)
 
@@ -38,7 +48,7 @@ const fetchUser = async () => {
         name: user.name,
         role: user.role,
         isActive: user.isActive,
-        password: '' // เว้นว่างไว้ถ้าไม่เปลี่ยน
+        password: ''
       })
     } else {
       errorMessage.value = 'ไม่พบข้อมูลผู้ใช้'
@@ -54,13 +64,12 @@ const submitForm = async () => {
   try {
     loading.value = true
     errorMessage.value = ''
+    successMessage.value = ''
 
     const payload = { ...form }
 
     // ตอนแก้ไข: ถ้าไม่เปลี่ยนรหัสผ่าน ให้ตัดฟิลด์ออก
-    if (isEdit.value && !payload.password) {
-      delete payload.password
-    }
+    if (isEdit.value && !payload.password) delete payload.password
 
     // ตอนเพิ่ม: ต้องมีรหัสผ่านเสมอ
     if (!isEdit.value && payload.password.length < 6) {
@@ -68,15 +77,18 @@ const submitForm = async () => {
       return
     }
 
+    // ✅ ห้ามส่ง role ไปเมื่อแก้ไขบัญชีตนเอง (Backend ก็กันไว้อีกชั้น)
+    if (isSelf.value) delete payload.role
+
     if (isEdit.value) {
-      await userService.update(userId, payload)
-      successMessage.value = '✅ แก้ไขผู้ใช้สำเร็จ'
+      const updated = await userService.update(userId, payload)
+      successMessage.value = `✅ แก้ไขผู้ใช้สำเร็จ (บทบาทปัจจุบัน: ${roleLabels[updated.user?.role] || updated.user?.role})`
     } else {
       await userService.create(payload)
       successMessage.value = '✅ เพิ่มผู้ใช้สำเร็จ'
     }
 
-    setTimeout(() => router.push('/admin/users'), 800)
+    setTimeout(() => router.push('/admin/users'), 900)
   } catch (error) {
     errorMessage.value = error.message || 'บันทึกข้อมูลไม่สำเร็จ'
   } finally {
@@ -104,22 +116,12 @@ onMounted(fetchUser)
     <form @submit.prevent="submitForm">
       <div class="mb-4">
         <label class="label">ชื่อผู้ใช้ <span class="text-red-500">*</span></label>
-        <input
-          v-model="form.username"
-          class="input"
-          placeholder="เช่น somchai"
-          required
-        />
+        <input v-model="form.username" class="input" placeholder="เช่น somchai" required />
       </div>
 
       <div class="mb-4">
         <label class="label">ชื่อ-นามสกุล <span class="text-red-500">*</span></label>
-        <input
-          v-model="form.name"
-          class="input"
-          placeholder="เช่น สมชาย ใจดี"
-          required
-        />
+        <input v-model="form.name" class="input" placeholder="เช่น สมชาย ใจดี" required />
       </div>
 
       <div class="mb-4">
@@ -137,13 +139,30 @@ onMounted(fetchUser)
         />
       </div>
 
+      <!-- ✅ บทบาท: ล็อกเมื่อแก้ตัวเอง + ไม่มีตัวเลือกผู้ดูแลตอนแก้ไขผู้อื่น -->
       <div class="mb-4">
         <label class="label">บทบาท <span class="text-red-500">*</span></label>
-        <select v-model="form.role" class="input">
+        <select v-model="form.role" class="input" :disabled="isSelf">
           <option value="shop">🏪 พนักงานร้านค้า</option>
           <option value="warehouse">🏭 เจ้าหน้าที่คลังสินค้า</option>
-          <option value="super_admin">👑 ผู้ดูแลระบบ</option>
+          <option
+            v-if="!isEdit || form.role === 'super_admin'"
+            value="super_admin"
+            :disabled="isEdit"
+          >
+            👑 ผู้ดูแลระบบ{{ isEdit ? ' (บทบาทปัจจุบัน)' : '' }}
+          </option>
         </select>
+
+        <p v-if="isSelf" class="mt-1 text-xs text-gray-500">
+          🔒 คุณกำลังแก้ไขบัญชีของตนเอง — ไม่สามารถแก้ไขบทบาทตนเองได้
+        </p>
+        <p v-else-if="isEdit && form.role === 'super_admin'" class="mt-1 text-xs text-gray-500">
+          🔒 บัญชีนี้เป็นผู้ดูแลระบบอยู่แล้ว — ลดบทบาทได้ แต่จะเลื่อนกลับเป็นผู้ดูแลไม่ได้
+        </p>
+        <p v-else-if="isEdit" class="mt-1 text-xs text-gray-500">
+          🔒 การแก้ไขไม่สามารถเลื่อนบทบาทเป็นผู้ดูแลระบบได้ (ต้องสร้างบัญชีใหม่เท่านั้น)
+        </p>
       </div>
 
       <div class="mb-6">
